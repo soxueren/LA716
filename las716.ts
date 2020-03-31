@@ -151,7 +151,7 @@ export class LA716Parser {
 
   getData(buf: any) {
     if (this.header.numlog > 40) {
-      geotoolkit.log("parse header error!");
+      console.log("parse header error!");
       return;
     }
     this.body = [];
@@ -196,7 +196,7 @@ export class LA716Reader extends LA716Parser {
     return new Promise((resolve: any, reject: any) => {
       fs.open(this.fileName, "r", (status, fd) => {
         if (status) {
-          geotoolkit.log(status.message);
+          console.log(status.message);
           return;
         }
         const data = new Uint8Array(LA716_HEAD_SIZE),
@@ -212,13 +212,13 @@ export class LA716Reader extends LA716Parser {
 
   parseBody() {
     if (this.header.numlog > 40 || this.header.numlog < 1) {
-      geotoolkit.log("parse header error!");
+      console.log("parse header error!");
       return;
     }
     return new Promise((resolve: any, reject: any) => {
       fs.open(this.fileName, "r", (status, fd) => {
         if (status) {
-          geotoolkit.log(status.message);
+          console.log(status.message);
           return;
         }
         const buf_len = this.blockLength * this.blockNum;
