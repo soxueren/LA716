@@ -1,11 +1,10 @@
 import express from "express";
 import compression from "compression";  // compresses requests
-import session from "express-session";
 import bodyParser from "body-parser";
 import lusca from "lusca";
 import flash from "express-flash";
 import path from "path";
-
+import errorHandler from "errorhandler";
 // Controllers (route handlers)
 import { Response, Request } from 'express';
 import { LA716Reader } from './la716';
@@ -47,11 +46,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(flash());
 app.use(lusca.xframe("SAMEORIGIN"));
 app.use(lusca.xssProtection(true));
-
-app.use((req, res, next) => {
-    res.locals.user = req.user;
-    next();
-});
 
 app.use(
     express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
