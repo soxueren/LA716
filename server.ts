@@ -75,18 +75,31 @@ if (app.get("env") === "development") {
 }
 
 const rootdir='/data/'
-
+const Status = {
+  OK: 200,
+  Error: 500
+};
 app.get("/la716/:file",  (req: Request, res: Response) =>{
- let filename = rootdir + req.params["file"] + ".716";
+let filename = rootdir + req.params["file"] + ".716";
   const reader = LA716Reader.getReaderInstance(filename);
-  reader.parseHeader().then((reader: any) => {
-    reader.parseBody().then((reader: any) => {
-      res.json({
-        header: reader.header,
-        body: reader.body
-      });
-    });
-  });
+  reader.parseHeader().then(
+    (reader: any) => {
+      reader.parseBody().then(
+        (reader: any) => {
+          res.json({
+            header: reader.header,
+            body: reader.body
+          });
+        },
+        (m: any) => {
+          res.status(Status.Error).send(m);
+        }
+      );
+    },
+    (m: any) => {
+      res.status(Status.Error).send(m);
+    }
+  );
 });
 
 /**
