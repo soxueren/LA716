@@ -47,18 +47,24 @@ export interface LA716Header {
 
 export class LA716Parser {
   fileName: string;
-  fileSize: number;
+  fileSize: number = 0;
   header: LA716Header;
-  blockLength: number;
-  blockNum: number;
+  blockLength: number = 0;
+  blockNum: number = 0;
   body: number[][];
 
   constructor(filename: string) {
     this.fileName = filename;
-    const fd = fs.openSync(filename, "r");
-    const stat = fs.fstatSync(fd);
-    this.fileSize = stat.size;
-    fs.closeSync(fd);
+    try {
+      if (fs.existsSync(filename)) {
+        const fd = fs.openSync(filename, "r");
+        const stat = fs.fstatSync(fd);
+        this.fileSize = stat.size;
+        fs.closeSync(fd);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   toString(bytes: any): string {
@@ -76,7 +82,11 @@ export class LA716Parser {
     return str;
   }
 
-  getStatistics(buf: any): void {
+  getStatistics(buf: any): number {
+    if (this.fileSize == 0) {
+      console.log(this.fileName + " is not found!");
+      return -1;
+    }
     this.header = {
       ecc: buf
         .slice(LA716_HEAD_OFFSET.ecc_offset, LA716_HEAD_OFFSET.ecc_offset + 4)
@@ -147,12 +157,13 @@ export class LA716Parser {
           this.header.spcpr
       );
     this.blockLength = this.header.spcpr * this.header.numlog * FLOAT_SIZE;
+    return 1;
   }
 
-  getData(buf: any) {
-    if (this.header.numlog > 40) {
-      console.log("parse header error!");
-      return;
+  getData(buf: any): number {
+    if (this.header.numlog > 40 || this.fileSize == 0) {
+      console.log("header is not valid!");
+      return -1;
     }
     this.body = [];
     for (let i = 0; i < this.header.numlog; i++) {
@@ -179,6 +190,7 @@ export class LA716Parser {
         this.body[j] = [...this.body[j], ...blk_curves];
       }
     }
+    return 1;
   }
 }
 
@@ -194,16 +206,19 @@ export class LA716Reader extends LA716Parser {
 
   parseHeader(): any {
     return new Promise((resolve: any, reject: any) => {
-      fs.open(this.fileName, "r", (status, fd) => {
-        if (status) {
-          console.log(status.message);
+      fs.open(this.fileName, "r", (err, fd) => {
+        if (err) {
+          console.log(err.message);
+          reject(err);
           return;
         }
         const data = new Uint8Array(LA716_HEAD_SIZE),
           buffer = Buffer.from(data.buffer);
         fs.read(fd, buffer, 0, LA716_HEAD_SIZE, 0, (err, bytesRead, b) => {
           fs.closeSync(fd);
-          this.getStatistics(b);
+          if (this.getStatistics(b) == -1) {
+            reject(new Error("parse header error!"));
+          }
           resolve(this);
         });
       });
@@ -212,13 +227,13 @@ export class LA716Reader extends LA716Parser {
 
   parseBody() {
     if (this.header.numlog > 40 || this.header.numlog < 1) {
-      console.log("parse header error!");
+      console.log("parse body error!");
       return;
     }
     return new Promise((resolve: any, reject: any) => {
-      fs.open(this.fileName, "r", (status, fd) => {
-        if (status) {
-          console.log(status.message);
+      fs.open(this.fileName, "r", (err, fd) => {
+        if (err) {
+          reject(err);
           return;
         }
         const buf_len = this.blockLength * this.blockNum;
@@ -232,7 +247,9 @@ export class LA716Reader extends LA716Parser {
           LA716_HEAD_SIZE,
           (err, bytesRead, b) => {
             fs.closeSync(fd);
-            this.getData(b);
+            if (this.getData(b) == -1) {
+              reject(new Error("parse body Error"));
+            }
             resolve(this);
           }
         );
