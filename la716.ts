@@ -17,7 +17,8 @@ export const LA716_HEAD = {
   rlev: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4, length: 4 }, //4B
   b1: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4, length: 4 }, //4B
   spcpr: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4, length: 4 }, //4B
-  b2: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4, length: 8 } //8B
+  b2: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4, length: 4 }, //4B
+  b3: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4, length: 4 } //4B
 };
 export interface LA716Header {
   //4B
