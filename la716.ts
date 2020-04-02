@@ -2,21 +2,22 @@
 import * as iconv from "iconv-lite";
 import fs from "fs";
 
-export const LA716_HEAD_SIZE = 512;
-export const FLOAT_SIZE = 4;
-export const LA716_HEAD_OFFSET = {
-  ecc_offset: 0, //4B
-  comp_offset: 4, //80B
-  well_offset: 4 + 80, //80B
-  numlog_offset: 4 + 80 * 2, //2B-number of logs
-  b0_offset: 4 + 80 * 2 + 2, //2B
-  lognames_offset: 4 + 80 * 2 + 2 + 2, //80B
-  stdep_offset: 4 + 80 * 3 + 2 + 2, //4B
-  endep_offset: 4 + 80 * 3 + 2 + 2 + 4, //4B
-  rlev_offset: 4 + 80 * 3 + 2 + 2 + 4 + 4, //4B
-  b1_offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4, //4B
-  spcpr_offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4, //4B
-  b2_offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4 //8B
+const LA716_HEAD_SIZE = 512;
+const FLOAT_SIZE = 4;
+const MAX_LOG_NUM = 40;
+export const LA716_HEAD = {
+  ecc: { offset: 0, length: 4 }, //4B
+  comp: { offset: 4, length: 80 }, //80B
+  well: { offset: 4 + 80, length: 80 }, //80B
+  numlog: { offset: 4 + 80 * 2, length: 2 }, //2B-number of logs
+  b0: { offset: 4 + 80 * 2 + 2, length: 2 }, //2B
+  lognames: { offset: 4 + 80 * 2 + 2 + 2, length: 80 }, //80B
+  stdep: { offset: 4 + 80 * 3 + 2 + 2, length: 4 }, //4B
+  endep: { offset: 4 + 80 * 3 + 2 + 2 + 4, length: 4 }, //4B
+  rlev: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4, length: 4 }, //4B
+  b1: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4, length: 4 }, //4B
+  spcpr: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4, length: 4 }, //4B
+  b2: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4, length: 8 } //8B
 };
 export interface LA716Header {
   //4B
@@ -89,64 +90,79 @@ export class LA716Parser {
     }
     this.header = {
       ecc: buf
-        .slice(LA716_HEAD_OFFSET.ecc_offset, LA716_HEAD_OFFSET.ecc_offset + 4)
+        .slice(
+          LA716_HEAD.ecc.offset,
+          LA716_HEAD.ecc.offset + LA716_HEAD.ecc.length
+        )
         .readUInt32LE(0),
       comp: this.toString(
         buf.slice(
-          LA716_HEAD_OFFSET.comp_offset,
-          LA716_HEAD_OFFSET.comp_offset + 80
+          LA716_HEAD.comp.offset,
+          LA716_HEAD.comp.offset + LA716_HEAD.comp.length
         )
       ),
       well: this.toString(
         buf.slice(
-          LA716_HEAD_OFFSET.well_offset,
-          LA716_HEAD_OFFSET.well_offset + 80
+          LA716_HEAD.well.offset,
+          LA716_HEAD.well.offset + LA716_HEAD.well.length
         )
       ),
       numlog: buf
         .slice(
-          LA716_HEAD_OFFSET.numlog_offset,
-          LA716_HEAD_OFFSET.numlog_offset + 2
+          LA716_HEAD.numlog.offset,
+          LA716_HEAD.numlog.offset + LA716_HEAD.numlog.length
         )
         .readInt16LE(0),
       b0: buf
-        .slice(LA716_HEAD_OFFSET.b0_offset, LA716_HEAD_OFFSET.b0_offset + 2)
+        .slice(
+          LA716_HEAD.b0.offset,
+          LA716_HEAD.b0.offset + LA716_HEAD.b0.length
+        )
         .readInt16LE(0),
       lognames: this.toString(
         buf.slice(
-          LA716_HEAD_OFFSET.lognames_offset,
-          LA716_HEAD_OFFSET.lognames_offset + 80
+          LA716_HEAD.lognames.offset,
+          LA716_HEAD.lognames.offset + LA716_HEAD.lognames.length
         )
       ),
       //4B
       stdep: buf
         .slice(
-          LA716_HEAD_OFFSET.stdep_offset,
-          LA716_HEAD_OFFSET.stdep_offset + 4
+          LA716_HEAD.stdep.offset,
+          LA716_HEAD.stdep.offset + LA716_HEAD.stdep.length
         )
         .readFloatLE(0),
       //4B
       endep: buf
         .slice(
-          LA716_HEAD_OFFSET.endep_offset,
-          LA716_HEAD_OFFSET.endep_offset + 4
+          LA716_HEAD.endep.offset,
+          LA716_HEAD.endep.offset + LA716_HEAD.endep.length
         )
         .readFloatLE(0),
       //4B-采样间隔
       rlev: buf
-        .slice(LA716_HEAD_OFFSET.rlev_offset, LA716_HEAD_OFFSET.rlev_offset + 4)
+        .slice(
+          LA716_HEAD.rlev.offset,
+          LA716_HEAD.rlev.offset + LA716_HEAD.rlev.length
+        )
         .readFloatLE(0),
       b1: buf
-        .slice(LA716_HEAD_OFFSET.b1_offset, LA716_HEAD_OFFSET.b1_offset + 4)
+        .slice(
+          LA716_HEAD.b1.offset,
+          LA716_HEAD.b1.offset + LA716_HEAD.b1.length
+        )
         .readFloatLE(0),
       spcpr: buf
         .slice(
-          LA716_HEAD_OFFSET.spcpr_offset,
-          LA716_HEAD_OFFSET.spcpr_offset + 4
+          LA716_HEAD.spcpr.offset,
+          LA716_HEAD.spcpr.offset + LA716_HEAD.spcpr.length
         )
         .readFloatLE(0),
       b2: buf
-        .slice(LA716_HEAD_OFFSET.b2_offset, LA716_HEAD_OFFSET.b2_offset + 4)
+        .slice(
+          LA716_HEAD.b2.offset,
+          LA716_HEAD.b2.offset + LA716_HEAD.b2.length
+        )
         .readFloatLE(0)
     };
     this.blockNum =
@@ -161,7 +177,7 @@ export class LA716Parser {
   }
 
   getData(buf: any): number {
-    if (this.header.numlog > 40 || this.fileSize == 0) {
+    if (this.header.numlog > MAX_LOG_NUM || this.fileSize == 0) {
       console.log("header is not valid!");
       return -1;
     }
@@ -226,7 +242,7 @@ export class LA716Reader extends LA716Parser {
   }
 
   parseBody() {
-    if (this.header.numlog > 40 || this.header.numlog < 1) {
+    if (this.header.numlog > MAX_LOG_NUM || this.header.numlog < 1) {
       console.log("parse body error!");
       return;
     }
