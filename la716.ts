@@ -86,7 +86,7 @@ export class LA716Parser {
     return str;
   }
 
-  getStatistics(buf: any): number {
+  getStatistics(buf: Buffer): number {
     if (this.fileSize == 0) {
       console.log(this.fileName + " is not found!");
       return -1;
@@ -170,10 +170,11 @@ export class LA716Parser {
           this.header.spcpr
       );
     this.blockLength = this.header.spcpr * this.header.numlog * FLOAT_SIZE;
+    buf.fill(null);
     return 1;
   }
 
-  getData(buf: any): number {
+  getData(buf: Buffer): number {
     if (this.header.numlog > MAX_LOG_NUM || this.fileSize == 0) {
       console.log("header is not valid!");
       return -1;
@@ -203,6 +204,7 @@ export class LA716Parser {
         this.body[j] = [...this.body[j], ...blk_curves];
       }
     }
+    buf.fill(null);
     return 1;
   }
 }
