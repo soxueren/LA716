@@ -87,8 +87,7 @@ export class LA716Parser {
   }
 
   getStatistics(buf: Buffer): number {
-    if (this.fileSize == 0) {
-      console.log(this.fileName + " is not found!");
+    if (buf.length < 1) {
       return -1;
     }
     this.header = {
@@ -175,8 +174,7 @@ export class LA716Parser {
   }
 
   getData(buf: Buffer): number {
-    if (this.header.numlog > MAX_LOG_NUM || this.fileSize == 0) {
-      console.log("header is not valid!");
+    if (this.header.numlog > MAX_LOG_NUM || buf.length < 1) {
       return -1;
     }
     this.body = [];
@@ -221,9 +219,12 @@ export class LA716Reader extends LA716Parser {
 
   parseHeader(): any {
     return new Promise((resolve: any, reject: any) => {
+      if (this.fileSize < 1) {
+        reject(new Error(this.fileName + " is not found!"));
+        return;
+      }
       fs.open(this.fileName, "r", (err, fd) => {
         if (err) {
-          console.log(err.message);
           reject(err);
           return;
         }
@@ -241,11 +242,11 @@ export class LA716Reader extends LA716Parser {
   }
 
   parseBody() {
-    if (this.header.numlog > MAX_LOG_NUM || this.header.numlog < 1) {
-      console.log("parse body error!");
-      return;
-    }
     return new Promise((resolve: any, reject: any) => {
+      if (this.header.numlog > MAX_LOG_NUM || this.header.numlog < 1) {
+        reject(new Error(this.fileName + " is not valid!"));
+        return;
+      }
       fs.open(this.fileName, "r", (err, fd) => {
         if (err) {
           reject(err);
