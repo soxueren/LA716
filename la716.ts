@@ -16,9 +16,9 @@ export const LA716_HEAD = {
   endep: { offset: 4 + 80 * 3 + 2 + 2 + 4, length: 4 }, //4B
   rlev: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4, length: 4 }, //4B
   b1: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4, length: 4 }, //4B
-  spcpr: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4, length: 4 }, //4B
-  b2: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4, length: 4 }, //4B
-  b3: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4, length: 4 } //4B
+  spcpr: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4, length: 4 } //4B
+  //b2: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4, length: 4 }, //4B
+  //b3: { offset: 4 + 80 * 3 + 2 + 2 + 4 + 4 + 4 + 4 + 4 + 4, length: 4 } //4B
 };
 export interface LA716Header {
   //4B
@@ -43,8 +43,10 @@ export interface LA716Header {
   b1: number;
   //4B-采样点数
   spcpr: number;
-  //8B
-  b2: number;
+  //4B
+  //b2: number;
+   //4B
+  //b3: number;
 }
 
 export class LA716Parser {
@@ -157,12 +159,6 @@ export class LA716Parser {
         .slice(
           LA716_HEAD.spcpr.offset,
           LA716_HEAD.spcpr.offset + LA716_HEAD.spcpr.length
-        )
-        .readFloatLE(0),
-      b2: buf
-        .slice(
-          LA716_HEAD.b2.offset,
-          LA716_HEAD.b2.offset + LA716_HEAD.b2.length
         )
         .readFloatLE(0)
     };
