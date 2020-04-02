@@ -1,107 +1,120 @@
 import express from "express";
-import compression from "compression";  // compresses requests
+import compression from "compression"; // compresses requests
 import bodyParser from "body-parser";
 import lusca from "lusca";
 import flash from "express-flash";
 import path from "path";
 import errorHandler from "errorhandler";
 // Controllers (route handlers)
-import { Response, Request } from 'express';
-import { LA716Reader } from './la716';
+import { Response, Request } from "express";
+import { LA716Reader } from "./la716";
 
 import cluster from "cluster";
 // Code to run if we're in the master process
 if (cluster.isMaster) {
-    // Count the machine's CPUs
-    const cpuCount = require("os").cpus().length;
+  // Count the machine's CPUs
+  const cpuCount = require("os").cpus().length;
 
-    // Create a worker for each CPU
-    for (let i = 0; i < cpuCount; i += 1) {
-        cluster.fork();
-    }
+  // Create a worker for each CPU
+  for (let i = 0; i < cpuCount; i += 1) {
+    cluster.fork();
+  }
 
-    cluster.on("listening", function (worker, address) {
-        console.log("[master] " + "listening: worker" + worker.id + ",pid:" + worker.process.pid + ", 0.0.0.0:" + address.port);
-    });
-
-    // Listen for terminating workers
-    cluster.on("exit", function (worker) {
-        // Replace the terminated workers
-        console.log("Worker " + worker.id + " died :("); // eslint-disable-line no-console
-        cluster.fork();
-    });
-
-    // Code to run if we're in a worker process
-} else {
-
-// Create Express server
-const app = express();
-
-// Express configuration
-app.set("port", process.env.PORT || 8000);
-app.use(compression());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use(flash());
-app.use(lusca.xframe("SAMEORIGIN"));
-app.use(lusca.xssProtection(true));
-
-app.use(
-    express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
-);
-
-//设置允许跨域访问该服务.
-app.use((req, res, next) =>{
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        res.header("Access-Control-Allow-Methods","PUT,POST,GET,DELETE,OPTIONS");
-        res.header("X-Powered-By","3.2.1");		
-        res.header("Content-Type", "application/json;charset=utf-8");
-        next();
-});
-
-if (app.get("env") === "development") {
-    app.use(errorHandler());
-}
-
-const rootdir='/data/'
-const Status = {
-  OK: 200,
-  Error: 500
-};
-app.get("/la716/:file",  (req: Request, res: Response) =>{
-let filename = rootdir + req.params["file"] + ".716";
-  const reader = LA716Reader.getReaderInstance(filename);
-  reader.parseHeader().then(
-    (reader: any) => {
-      reader.parseBody().then(
-        (reader: any) => {
-          res.json({
-            header: reader.header,
-            body: reader.body
-          });
-        },
-        (m: any) => {
-          res.status(Status.Error).send(m);
-        }
-      );
-    },
-    (m: any) => {
-      res.status(Status.Error).send(m);
-    }
-  );
-});
-
-/**
- * Start Express server.
- */
-app.listen(app.get("port"), () => {
+  cluster.on("listening", function(worker, address) {
     console.log(
-        "  App is running at http://localhost:%d in %s mode",
-        app.get("port"),
-        app.get("env")
+      "[master] " +
+        "listening: worker" +
+        worker.id +
+        ",pid:" +
+        worker.process.pid +
+        ", 0.0.0.0:" +
+        address.port
+    );
+  });
+
+  // Listen for terminating workers
+  cluster.on("exit", function(worker) {
+    // Replace the terminated workers
+    console.log("Worker " + worker.id + " died :("); // eslint-disable-line no-console
+    cluster.fork();
+  });
+
+  // Code to run if we're in a worker process
+} else {
+  // Create Express server
+  const app = express();
+
+  // Express configuration
+  app.set("port", process.env.PORT || 8000);
+  app.use(compression());
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
+
+  app.use(flash());
+  app.use(lusca.xframe("SAMEORIGIN"));
+  app.use(lusca.xssProtection(true));
+
+  app.use(
+    express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
+  );
+
+  //设置允许跨域访问该服务.
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept"
+    );
+    res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
+    res.header("X-Powered-By", "3.2.1");
+    res.header("Content-Type", "application/json;charset=utf-8");
+    next();
+  });
+
+  if (app.get("env") === "development") {
+    app.use(errorHandler());
+  }
+
+  const rootdir = "/data/";
+  const Status = {
+    OK: 200,
+    Error: 400
+  };
+  app.get("/la716/:file", (req: Request, res: Response) => {
+    let filename =
+      rootdir + req.params["file"] + (req.params["file"].endsWith(".716")
+        ? ""
+        : ".716");
+    const reader = LA716Reader.getReaderInstance(filename);
+    reader.parseHeader().then(
+      (reader: any) => {
+        reader.parseBody().then(
+          (reader: any) => {
+            res.json({
+              header: reader.header,
+              body: reader.body
+            });
+          },
+          (m: Error) => {
+            res.status(Status.Error).send(m.message);
+          }
+        );
+      },
+      (m: any) => {
+        res.status(Status.Error).send(m.message);
+      }
+    );
+  });
+
+  /**
+   * Start Express server.
+   */
+  app.listen(app.get("port"), () => {
+    console.log(
+      "  App is running at http://localhost:%d in %s mode",
+      app.get("port"),
+      app.get("env")
     );
     console.log("  Press CTRL-C to stop\n");
-});
+  });
 }
