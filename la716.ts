@@ -45,7 +45,7 @@ export interface LA716Header {
   spcpr: number;
   //4B
   //b2: number;
-   //4B
+  //4B
   //b3: number;
 }
 
